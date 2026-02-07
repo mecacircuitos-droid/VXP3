@@ -1,36 +1,34 @@
 XP_CSS = r"""
 <style>
-/* Hide Streamlit chrome */
+/* ---- Hide Streamlit chrome ---- */
 [data-testid="stHeader"], [data-testid="stToolbar"], #MainMenu { display:none !important; }
 footer { visibility:hidden; }
 
-/* Base */
+/* ---- Global look (Windows XP classic-ish) ---- */
 html, body, [data-testid="stAppViewContainer"]{
   background:#bfbfbf;
-  font-family:"Trebuchet MS", Tahoma, "MS Sans Serif", Verdana, Arial, sans-serif;
+  font-family: "Trebuchet MS", Tahoma, "MS Sans Serif", Verdana, Arial, sans-serif;
   font-size:14px;
   font-weight:700;
 }
 
-/* Remove Streamlit padding so we can draw a fixed 1024x768 workspace */
+/* Force 4:3 frame (1024×768) */
 .block-container{
   padding:0 !important;
-  max-width:none !important;
+  max-width:1024px !important;
+  margin:0 auto !important;
+  min-height:768px !important;
 }
 
-/* ---------- MAIN VXP SHELL (1024x768) ---------- */
-.vxp-mainframe{
-  width:1024px;
-  height:768px;
-  margin:0 auto;
+/* Main content area gets a border like the VXP window */
+[data-testid="stAppViewContainer"] .block-container{
   background:#c0c0c0;
   border:2px solid #404040;
   box-shadow:2px 2px 0px #808080;
-  position:relative;
-  overflow:hidden;
 }
 
-.vxp-main-titlebar{
+/* ---- Shell (title/menu/status) ---- */
+.vxp-shell-titlebar{
   height:26px;
   background: linear-gradient(90deg, #0a246a 0%, #3a6ea5 100%);
   color:#ffffff;
@@ -38,12 +36,10 @@ html, body, [data-testid="stAppViewContainer"]{
   align-items:center;
   justify-content:space-between;
   padding:0 8px;
+  box-sizing:border-box;
   font-weight:900;
   letter-spacing:0.2px;
-  box-sizing:border-box;
 }
-
-.vxp-main-title{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
 .vxp-winbtns{ display:flex; gap:4px; }
 .vxp-winbtn{
@@ -62,60 +58,23 @@ html, body, [data-testid="stAppViewContainer"]{
   line-height:12px;
 }
 
-.vxp-main-menubar{
+.vxp-shell-menubar{
   height:22px;
   background:#d4d0c8;
   border-top:1px solid #ffffff;
   border-bottom:1px solid #808080;
   display:flex;
   align-items:center;
-  gap:10px;
+  gap:14px;
   padding:0 8px;
   box-sizing:border-box;
   font-weight:700;
   font-size:13px;
-}
-
-.vxp-menu-item{
   color:#000;
-  text-decoration:none;
-  padding:2px 6px;
 }
-.vxp-menu-item:hover{
-  background:#0a246a;
-  color:#fff;
-}
+.vxp-shell-menubar span{ padding:2px 4px; }
 
-.vxp-main-body{
-  position:absolute;
-  left:0; right:0;
-  top:48px;   /* 26 + 22 */
-  bottom:22px;/* status bar */
-  display:flex;
-  overflow:hidden;
-}
-
-.vxp-leftdock{
-  width:92px;
-  background:#d4d0c8;
-  border-right:2px solid #808080;
-  box-shadow: inset 1px 1px 0px #ffffff;
-  padding:6px 4px;
-  box-sizing:border-box;
-}
-
-.vxp-desktop{
-  position:relative;
-  flex:1;
-  background:#c0c0c0;
-  overflow:hidden;
-  padding:6px;
-  box-sizing:border-box;
-}
-
-.vxp-statusbar{
-  position:absolute;
-  left:0; right:0; bottom:0;
+.vxp-shell-statusbar{
   height:22px;
   background:#d4d0c8;
   border-top:2px solid #808080;
@@ -129,18 +88,22 @@ html, body, [data-testid="stAppViewContainer"]{
   font-weight:700;
 }
 
-/* ---------- CHILD WINDOWS (MDI) ---------- */
-.vxp-win{
-  position:absolute;
+/* ---- Left smart icon bar ---- */
+.vxp-toolbar-img{ width:81px; padding:0; margin:0; }
+.vxp-imgbtn{ display:block; margin:6px 0; text-decoration:none; }
+.vxp-imgbtn img{ width:81px; height:auto; image-rendering: pixelated; }
+.vxp-imgbtn.disabled{ opacity:0.75; pointer-events:none; }
+
+/* ---- Desktop host (MDI area) ---- */
+/* We create a marker (.vxp-desktop-host) inside a VerticalBlock; style that block as the desktop. */
+div[data-testid="stVerticalBlock"]:has(.vxp-desktop-host){
+  position:relative;
+  height:680px;
   background:#c0c0c0;
-  border-top:2px solid #ffffff;
-  border-left:2px solid #ffffff;
-  border-right:2px solid #404040;
-  border-bottom:2px solid #404040;
-  box-shadow:2px 2px 0px #808080;
-  box-sizing:border-box;
+  overflow:hidden;
 }
 
+/* Common window skin applied to positioned element-containers */
 .vxp-win-caption{
   height:22px;
   display:flex;
@@ -150,22 +113,10 @@ html, body, [data-testid="stAppViewContainer"]{
   box-sizing:border-box;
   font-weight:900;
   font-size:13px;
-}
-
-.vxp-win-caption.active{
-  background: linear-gradient(90deg, #0a246a 0%, #3a6ea5 100%);
   color:#fff;
 }
-
-.vxp-win-caption.inactive{
-  background:#7f7f7f;
-  color:#fff;
-}
-
-.vxp-win-content{
-  padding:10px 10px 8px 10px;
-  box-sizing:border-box;
-}
+.vxp-win-caption.active{ background: linear-gradient(90deg, #0a246a 0%, #3a6ea5 100%); }
+.vxp-win-caption.inactive{ background:#7f7f7f; }
 
 .vxp-closebox{
   width:18px;
@@ -184,16 +135,53 @@ html, body, [data-testid="stAppViewContainer"]{
   line-height:12px;
 }
 
-/* Modal overlay */
-.vxp-dim{
-  position:absolute;
-  left:0; top:0; right:0; bottom:0;
-  background: rgba(0,0,0,0.10);
-  z-index:40;
-}
-.vxp-modal{ z-index:50; }
+.vxp-win-pad{ padding:10px 10px 8px 10px; box-sizing:border-box; }
 
-/* ---------- Streamlit widget skin (classic 3D) ---------- */
+/* ---- Position windows using marker + adjacent sibling (requires :has support) ---- */
+/* Select Procedure window */
+div[data-testid="stVerticalBlock"]:has(.vxp-desktop-host)
+  > div.element-container:has(.vxp-win-marker[data-win="selectproc"]) + div.element-container{
+  position:absolute;
+  left:0px;
+  top:0px;
+  width:760px;
+  height:610px;
+  z-index:10;
+  background:#c0c0c0;
+  border-top:2px solid #ffffff;
+  border-left:2px solid #ffffff;
+  border-right:2px solid #404040;
+  border-bottom:2px solid #404040;
+  box-shadow:2px 2px 0px #808080;
+  padding:0;
+}
+
+/* Active window (procedure screens) */
+div[data-testid="stVerticalBlock"]:has(.vxp-desktop-host)
+  > div.element-container:has(.vxp-win-marker[data-win="active"]) + div.element-container{
+  position:absolute;
+  left:220px;
+  top:95px;
+  width:680px;
+  height:520px;
+  z-index:20;
+  background:#c0c0c0;
+  border-top:2px solid #ffffff;
+  border-left:2px solid #ffffff;
+  border-right:2px solid #404040;
+  border-bottom:2px solid #404040;
+  box-shadow:2px 2px 0px #808080;
+  padding:0;
+}
+
+/* Make inner VerticalBlocks flush inside the window boxes */
+div[data-testid="stVerticalBlock"]:has(.vxp-desktop-host)
+  > div.element-container:has(.vxp-win-marker) + div.element-container
+  > div[data-testid="stVerticalBlock"]{
+  gap:0rem;
+}
+
+/* ---- Widgets (classic 3D) ---- */
 .stButton > button{
   background:#c0c0c0 !important;
   color:#000 !important;
@@ -214,13 +202,7 @@ html, body, [data-testid="stAppViewContainer"]{
   border-bottom:2px solid #ffffff !important;
 }
 
-/* Smaller button for Close/Done */
-.vxp-smallbtn .stButton > button{
-  font-size:16px !important;
-  padding:8px 14px !important;
-  width:140px !important;
-}
-
+/* Inputs */
 div[data-testid="stNumberInput"] input,
 div[data-testid="stTextInput"] input,
 div[data-testid="stSelectbox"] div[role="combobox"]{
@@ -233,14 +215,7 @@ div[data-testid="stSelectbox"] div[role="combobox"]{
   font-weight:700 !important;
 }
 
-.vxp-label{ font-weight:900; font-size:15px; }
-
-.vxp-strip{
-  display:flex; align-items:center; justify-content:space-between;
-  margin:4px 0 10px 0;
-  font-weight:900;
-}
-
+/* Monospace panels */
 .vxp-mono{
   font-family:"Courier New", Courier, monospace;
   font-size:13px;
@@ -254,14 +229,7 @@ div[data-testid="stSelectbox"] div[role="combobox"]{
   box-sizing:border-box;
 }
 
-/* Toolbar icons */
-.vxp-toolbar-img{ width:81px; padding:0; margin:0; }
-.vxp-imgbtn{ display:block; margin:6px 0; text-decoration:none; }
-.vxp-imgbtn img{ width:81px; height:auto; image-rendering: pixelated; }
-.vxp-imgbtn.disabled{ opacity:0.75; pointer-events:none; }
-
-/* Checkmarks */
-.vxp-check{ font-size:22px; font-weight:900; color:#008000; padding-top:10px; }
+.vxp-label{ font-weight:900; font-size:15px; }
 
 </style>
 """
