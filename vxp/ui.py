@@ -1,7 +1,5 @@
 import time
 import streamlit as st
-
-from .styles import XP_CSS
 from .sim import (
     BLADES, REGIMES, REGIME_LABEL,
     BO105_DISPLAY_RPM,
@@ -18,23 +16,64 @@ def go(screen: str, **kwargs) -> None:
     for k, v in kwargs.items():
         st.session_state[k] = v
 
-
-def frame_start(title: str) -> None:
-    st.markdown(XP_CSS, unsafe_allow_html=True)
-    st.markdown("<div class='vxp-frame'>", unsafe_allow_html=True)
+def _win_begin(
+    *,
+    win_id: str,
+    title: str,
+    x: int,
+    y: int,
+    w: int,
+    h: int,
+    active: bool = True,
+    modal: bool = False,
+) -> None:
+    """Dibuja una ventana estilo WinXP dentro del 'desktop' (MDI)."""
+    cls = "vxp-win vxp-modal" if modal else "vxp-win"
+    cap_cls = "active" if active else "inactive"
     st.markdown(
-        f"<div class='vxp-titlebar'><div>{title}</div><div style='font-weight:900;'>✕</div></div>",
+        (
+            f"<div id='{win_id}' class='{cls}' style='left:{x}px; top:{y}px; width:{w}px; height:{h}px;'>"
+            f"<div class='vxp-win-caption {cap_cls}'>"
+            f"<div>{title}</div>"
+            "<div class='vxp-closebox'>✕</div>"
+            "</div>"
+            "<div class='vxp-win-content'>"
+        ),
         unsafe_allow_html=True,
     )
-    st.markdown(
-        "<div class='vxp-menubar'>File&nbsp;&nbsp;View&nbsp;&nbsp;Log&nbsp;&nbsp;Test AU&nbsp;&nbsp;Settings&nbsp;&nbsp;Help</div>",
-        unsafe_allow_html=True,
-    )
-    st.markdown("<div class='vxp-content'>", unsafe_allow_html=True)
 
 
-def frame_end() -> None:
+def _win_end() -> None:
     st.markdown("</div></div>", unsafe_allow_html=True)
+
+
+def _dim() -> None:
+    st.markdown("<div class='vxp-dim'></div>", unsafe_allow_html=True)
+
+
+def _select_procedure_window(active: bool) -> None:
+    # Ventana “Select Procedure” (siempre visible, como el original)
+    _win_begin(
+        win_id="proc",
+        title="Select Procedure:",
+        x=10,
+        y=10,
+        w=820,
+        h=660,
+        active=active,
+    )
+    st.markdown("<div style='height:4px;'></div>", unsafe_allow_html=True)
+
+    # Botones (imitación del original). Se pueden ajustar más adelante por aeronave.
+    st.button("Aircraft Info", use_container_width=True, on_click=go, args=("aircraft_info",), key="proc_aircraft")
+    st.button("Main Rotor Balance Run 1", use_container_width=True, on_click=go, args=("mr_menu",), key="proc_mr1")
+    st.button("Tail Rotor Balance Run 1", use_container_width=True, on_click=go, args=("not_impl",), key="proc_tr1")
+    st.button("T/R Driveshaft Balance Run 1", use_container_width=True, on_click=go, args=("not_impl",), key="proc_dr")
+    st.button("Vibration Signatures", use_container_width=True, on_click=go, args=("not_impl",), key="proc_vib")
+    st.button("Measurements Only", use_container_width=True, on_click=go, args=("not_impl",), key="proc_meas")
+    st.button("Setup / Utilities", use_container_width=True, on_click=go, args=("not_impl",), key="proc_setup")
+
+    _win_end()
 
 
 def init_state() -> None:
@@ -74,29 +113,33 @@ def run_selector_inline() -> int:
 
 
 def screen_home():
-    frame_start("Chadwick-Helmuth VXP  —  BO105 (Training)")
-    st.markdown("<div class='vxp-label'>Select Procedure:</div>", unsafe_allow_html=True)
-    st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
-
-    st.button("Aircraft Info", use_container_width=True, on_click=go, args=("aircraft_info",))
-    st.button("Main Rotor Track & Balance Run 1", use_container_width=True, on_click=go, args=("mr_menu",))
-
-    st.button("Vibration Signatures", use_container_width=True, on_click=go, args=("not_impl",))
-    st.button("Measurements Only", use_container_width=True, on_click=go, args=("not_impl",))
-    st.button("Setup / Utilities", use_container_width=True, on_click=go, args=("not_impl",))
-
-    frame_end()
+    # Solo el “desktop”: la ventana principal ya está en app.py
+    _select_procedure_window(active=True)
 
 
 def screen_not_impl():
-    frame_start("VXP  —  Not Implemented")
+    _select_procedure_window(active=False)
+    _win_begin(win_id="dlg_notimpl", title="VXP", x=220, y=180, w=520, h=260, active=True, modal=True)
     st.write("Solo se implementa **Main Rotor – Tracking & Balance (Option B)** para el BO105.")
-    st.button("Close", on_click=go, args=("home",))
-    frame_end()
+    st.markdown("<div class='vxp-smallbtn'>", unsafe_allow_html=True)
+    st.button("Close", on_click=go, args=("home",), key="notimpl_close")
+    st.markdown("</div>", unsafe_allow_html=True)
+    _win_end()
 
 
 def screen_mr_menu():
-    frame_start(f"Main Rotor Balance Run {st.session_state.vxp_run}")
+    _select_procedure_window(active=False)
+
+    _win_begin(
+        win_id="mr_menu",
+        title=f"Main Rotor Balance Run {st.session_state.vxp_run}",
+        x=140,
+        y=30,
+        w=760,
+        h=630,
+        active=True,
+    )
+
     st.markdown(
         "<div class='vxp-strip'><div>Tracking &amp; Balance – Option B</div>"
         f"<div>Run {st.session_state.vxp_run}</div></div>",
@@ -104,7 +147,7 @@ def screen_mr_menu():
     )
 
     def btn(label: str, scr: str):
-        st.button(label, use_container_width=True, on_click=go, args=(scr,))
+        st.button(label, use_container_width=True, on_click=go, args=(scr,), key=f"mr_{scr}")
 
     btn("COLLECT", "collect")
     btn("MEASUREMENTS LIST", "meas_list")
@@ -113,15 +156,26 @@ def screen_mr_menu():
     btn("SOLUTION", "solution")
     btn("NEXT RUN", "next_run_prompt")
 
-    st.button("Close", on_click=go, args=("home",))
-    frame_end()
+    st.markdown("<div class='vxp-smallbtn'>", unsafe_allow_html=True)
+    st.button("Close", on_click=go, args=("home",), key="mr_close")
+    st.markdown("</div>", unsafe_allow_html=True)
+    _win_end()
 
 
 def screen_collect():
-    frame_start(f"Main Rotor: Run {st.session_state.vxp_run} — Day Mode")
+    _select_procedure_window(active=False)
+    _win_begin(
+        win_id="collect",
+        title=f"RPM {BO105_DISPLAY_RPM:.1f}",
+        x=220,
+        y=70,
+        w=660,
+        h=560,
+        active=True,
+    )
     run = int(st.session_state.vxp_run)
     st.markdown(
-        f"<div class='vxp-strip'><div>RPM {BO105_DISPLAY_RPM:.1f}</div><div>Run {run}</div></div>",
+        f"<div class='vxp-strip'><div>Main Rotor: Run {run} &nbsp;&nbsp; Day Mode</div><div>Run {run}</div></div>",
         unsafe_allow_html=True,
     )
 
@@ -142,17 +196,23 @@ def screen_collect():
     if run == 3 and len(done) == 3 and all_ok(current_run_data(3)):
         st.markdown("<div class='vxp-label' style='margin-top:10px;'>✓ RUN 3 COMPLETE — PARAMETERS OK</div>", unsafe_allow_html=True)
 
-    st.button("Close", on_click=go, args=("mr_menu",))
-    frame_end()
+    st.markdown("<div class='vxp-smallbtn'>", unsafe_allow_html=True)
+    st.button("Close", on_click=go, args=("mr_menu",), key="collect_close")
+    st.markdown("</div>", unsafe_allow_html=True)
+    _win_end()
 
 
 def screen_acquire():
-    frame_start("ACQUIRING …")
+    _select_procedure_window(active=False)
+    _dim()
+    _win_begin(win_id="acq", title="ACQUIRING ...", x=240, y=140, w=560, h=380, active=True, modal=True)
     run = int(st.session_state.vxp_run)
     regime = st.session_state.get("vxp_pending_regime")
     if not regime:
-        st.button("Close", on_click=go, args=("collect",))
-        frame_end()
+        st.markdown("<div class='vxp-smallbtn'>", unsafe_allow_html=True)
+        st.button("Close", on_click=go, args=("collect",), key="acq_close1")
+        st.markdown("</div>", unsafe_allow_html=True)
+        _win_end()
         return
 
     st.markdown(f"<div class='vxp-label'>{REGIME_LABEL[regime]}</div>", unsafe_allow_html=True)
@@ -175,32 +235,42 @@ def screen_acquire():
         go("collect")
         st.rerun()
 
-    st.button("Close", on_click=go, args=("collect",))
-    frame_end()
+    st.markdown("<div class='vxp-smallbtn'>", unsafe_allow_html=True)
+    st.button("Close", on_click=go, args=("collect",), key="acq_close2")
+    st.markdown("</div>", unsafe_allow_html=True)
+    _win_end()
 
 
 def screen_meas_list():
-    frame_start("MEASUREMENTS LIST")
+    _select_procedure_window(active=False)
+    _win_begin(win_id="meas_list", title="MEASUREMENTS LIST", x=170, y=60, w=760, h=630, active=True)
     view_run = run_selector_inline()
     data = current_run_data(view_run)
     if not data:
         st.write("No measurements for this run yet. Go to COLLECT.")
-        st.button("Close", on_click=go, args=("mr_menu",))
-        frame_end()
+        st.markdown("<div class='vxp-smallbtn'>", unsafe_allow_html=True)
+        st.button("Close", on_click=go, args=("mr_menu",), key="ml_close_empty")
+        st.markdown("</div>", unsafe_allow_html=True)
+        _win_end()
         return
     st.markdown(f"<div class='vxp-mono' style='height:520px; overflow:auto;'>{legacy_results_text(view_run, data)}</div>", unsafe_allow_html=True)
-    st.button("Close", on_click=go, args=("mr_menu",))
-    frame_end()
+    st.markdown("<div class='vxp-smallbtn'>", unsafe_allow_html=True)
+    st.button("Close", on_click=go, args=("mr_menu",), key="ml_close")
+    st.markdown("</div>", unsafe_allow_html=True)
+    _win_end()
 
 
 def screen_meas_graph():
-    frame_start("MEASUREMENTS GRAPH")
+    _select_procedure_window(active=False)
+    _win_begin(win_id="meas_graph", title="MEASUREMENTS GRAPH", x=140, y=40, w=820, h=650, active=True)
     view_run = run_selector_inline()
     data = current_run_data(view_run)
     if not data:
         st.write("No measurements for this run yet. Go to COLLECT.")
-        st.button("Close", on_click=go, args=("mr_menu",))
-        frame_end()
+        st.markdown("<div class='vxp-smallbtn'>", unsafe_allow_html=True)
+        st.button("Close", on_click=go, args=("mr_menu",), key="mg_close_empty")
+        st.markdown("</div>", unsafe_allow_html=True)
+        _win_end()
         return
 
     available = [r for r in REGIMES if r in data]
@@ -214,12 +284,15 @@ def screen_meas_graph():
         st.pyplot(plot_track_marker(m), clear_figure=True)
         st.pyplot(plot_polar(m), clear_figure=True)
 
-    st.button("Close", on_click=go, args=("mr_menu",))
-    frame_end()
+    st.markdown("<div class='vxp-smallbtn'>", unsafe_allow_html=True)
+    st.button("Close", on_click=go, args=("mr_menu",), key="mg_close")
+    st.markdown("</div>", unsafe_allow_html=True)
+    _win_end()
 
 
 def screen_settings():
-    frame_start("SETTINGS")
+    _select_procedure_window(active=False)
+    _win_begin(win_id="settings", title="SETTINGS", x=240, y=120, w=560, h=520, active=True)
     run_selector_inline()
 
     regime = st.selectbox("Regime", options=REGIMES, format_func=lambda r: REGIME_LABEL[r])
@@ -238,36 +311,46 @@ def screen_settings():
         adj["trim_mm"][b] = float(row[2].number_input("", value=float(adj["trim_mm"][b]), step=0.5, key=f"tt_{regime}_{b}"))
         adj["bolt_g"][b] = float(row[3].number_input("", value=float(adj["bolt_g"][b]), step=5.0, key=f"wt_{regime}_{b}"))
 
-    st.button("Close", on_click=go, args=("mr_menu",))
-    frame_end()
+    st.markdown("<div class='vxp-smallbtn'>", unsafe_allow_html=True)
+    st.button("Close", on_click=go, args=("mr_menu",), key="set_close")
+    st.markdown("</div>", unsafe_allow_html=True)
+    _win_end()
 
 
 def screen_solution():
-    frame_start("SOLUTION")
+    _select_procedure_window(active=False)
+    _win_begin(win_id="solution", title="SOLUTION", x=240, y=90, w=560, h=580, active=True)
     view_run = run_selector_inline()
     data = current_run_data(view_run)
     if not data:
         st.write("No measurements for this run yet. Go to COLLECT.")
-        st.button("Close", on_click=go, args=("mr_menu",))
-        frame_end()
+        st.markdown("<div class='vxp-smallbtn'>", unsafe_allow_html=True)
+        st.button("Close", on_click=go, args=("mr_menu",), key="sol_close_empty")
+        st.markdown("</div>", unsafe_allow_html=True)
+        _win_end()
         return
 
     st.selectbox("", options=["BALANCE ONLY", "TRACK ONLY", "TRACK + BALANCE"], index=2, key="sol_type")
     st.button("GRAPHICAL SOLUTION", use_container_width=True, on_click=go, args=("solution_graph",))
     st.button("SHOW SOLUTION", use_container_width=True, on_click=go, args=("solution_text",))
     st.button("EDIT SOLUTION", use_container_width=True, on_click=go, args=("edit_solution",))
-    st.button("Close", on_click=go, args=("mr_menu",))
-    frame_end()
+    st.markdown("<div class='vxp-smallbtn'>", unsafe_allow_html=True)
+    st.button("Close", on_click=go, args=("mr_menu",), key="sol_close")
+    st.markdown("</div>", unsafe_allow_html=True)
+    _win_end()
 
 
 def screen_solution_graph():
-    frame_start("RESULTS")
+    _select_procedure_window(active=False)
+    _win_begin(win_id="sol_graph", title="RESULTS", x=110, y=30, w=860, h=660, active=True)
     view_run = run_selector_inline()
     data = current_run_data(view_run)
     if not data:
         st.write("No measurements for this run yet.")
-        st.button("Close", on_click=go, args=("solution",))
-        frame_end()
+        st.markdown("<div class='vxp-smallbtn'>", unsafe_allow_html=True)
+        st.button("Close", on_click=go, args=("solution",), key="sg_close_empty")
+        st.markdown("</div>", unsafe_allow_html=True)
+        _win_end()
         return
 
     available = [r for r in REGIMES if r in data]
@@ -286,18 +369,23 @@ def screen_solution_graph():
         st.pyplot(plot_track_graph(data), clear_figure=True)
         st.pyplot(plot_polar(m), clear_figure=True)
 
-    st.button("Close", on_click=go, args=("solution",))
-    frame_end()
+    st.markdown("<div class='vxp-smallbtn'>", unsafe_allow_html=True)
+    st.button("Close", on_click=go, args=("solution",), key="sg_close")
+    st.markdown("</div>", unsafe_allow_html=True)
+    _win_end()
 
 
 def screen_solution_text():
-    frame_start("SHOW SOLUTION")
+    _select_procedure_window(active=False)
+    _win_begin(win_id="sol_text", title="SHOW SOLUTION", x=140, y=40, w=820, h=650, active=True)
     view_run = run_selector_inline()
     data = current_run_data(view_run)
     if not data:
         st.write("No measurements for this run yet.")
-        st.button("Close", on_click=go, args=("solution",))
-        frame_end()
+        st.markdown("<div class='vxp-smallbtn'>", unsafe_allow_html=True)
+        st.button("Close", on_click=go, args=("solution",), key="st_close_empty")
+        st.markdown("</div>", unsafe_allow_html=True)
+        _win_end()
         return
 
     lines = []
@@ -326,12 +414,15 @@ def screen_solution_text():
             lines.append("✓ PARAMETERS OK — TRAINING COMPLETE")
 
     st.markdown(f"<div class='vxp-mono' style='height:680px; overflow:auto;'>{chr(10).join(lines)}</div>", unsafe_allow_html=True)
-    st.button("Close", on_click=go, args=("solution",))
-    frame_end()
+    st.markdown("<div class='vxp-smallbtn'>", unsafe_allow_html=True)
+    st.button("Close", on_click=go, args=("solution",), key="st_close")
+    st.markdown("</div>", unsafe_allow_html=True)
+    _win_end()
 
 
 def screen_next_run_prompt():
-    frame_start("NEXT RUN")
+    _select_procedure_window(active=False)
+    _win_begin(win_id="next", title="NEXT RUN", x=210, y=170, w=620, h=420, active=True)
 
     def start_next():
         cur = int(st.session_state.vxp_run)
@@ -349,8 +440,10 @@ def screen_next_run_prompt():
     st.button("UPDATE SETTINGS - START NEXT RUN", use_container_width=True, on_click=start_next)
     st.button("NO CHANGES MADE - START NEXT RUN", use_container_width=True, on_click=start_next)
     st.button("CANCEL - STAY ON RUN", use_container_width=True, on_click=go, args=("mr_menu",))
-    st.button("Close", on_click=go, args=("mr_menu",))
-    frame_end()
+    st.markdown("<div class='vxp-smallbtn'>", unsafe_allow_html=True)
+    st.button("Close", on_click=go, args=("mr_menu",), key="next_close")
+    st.markdown("</div>", unsafe_allow_html=True)
+    _win_end()
 
 
 def route():
