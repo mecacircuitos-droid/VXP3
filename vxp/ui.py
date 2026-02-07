@@ -368,16 +368,48 @@ def route():
     if scr == "solution_text": return screen_solution_text()
     if scr == "next_run_prompt": return screen_next_run_prompt()
     return screen_home()
-import streamlit as st
+
+# --- Navigation via querystring (Streamlit compat) ---
+
+def _get_query_params() -> dict:
+    """Compat: Streamlit <=1.26 (experimental_*) y Streamlit >=1.27 (query_params)."""
+    if hasattr(st, "query_params"):
+        try:
+            return dict(st.query_params)
+        except Exception:
+            return st.query_params
+    if hasattr(st, "experimental_get_query_params"):
+        return st.experimental_get_query_params()
+    return {}
+
+
+def _clear_query_params() -> None:
+    """Compat para limpiar la URL."""
+    if hasattr(st, "query_params"):
+        try:
+            for k in list(st.query_params.keys()):
+                del st.query_params[k]
+        except Exception:
+            pass
+        return
+    if hasattr(st, "experimental_set_query_params"):
+        st.experimental_set_query_params()
+
 
 def apply_nav():
-    qp = st.experimental_get_query_params()
-    nav = (qp.get("nav", [""])[0] or "").lower()
+    qp = _get_query_params()
+
+    # qp puede devolver str o lista según versión
+    nav = qp.get("nav", "")
+    if isinstance(nav, list):
+        nav = nav[0] if nav else ""
+    nav = (nav or "").lower()
+
     if not nav:
         return
 
     # Limpia la URL para que no se quede “pegado”
-    st.experimental_set_query_params()
+    _clear_query_params()
 
     if nav in ("disconnect", "exit"):
         go("home")
@@ -387,7 +419,13 @@ def apply_nav():
         go("solution_text")
     elif nav in ("upload", "download", "help"):
         go("not_impl")
+    elif nav == "settings":
+        go("settings")
     else:
         go("home")
 
-    st.rerun()
+    # rerun compat
+    if hasattr(st, "rerun"):
+        st.rerun()
+    else:
+        st.experimental_rerun()
