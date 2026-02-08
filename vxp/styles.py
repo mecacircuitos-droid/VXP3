@@ -5,8 +5,9 @@ XP_CSS = r"""
 footer { visibility:hidden; }
 
 /* ---- Global look (Windows XP classic-ish) ---- */
+/* Outside the 1024×768 frame we mimic the dark bezel of an industrial tablet. */
 html, body, [data-testid="stAppViewContainer"]{
-  background:#bfbfbf;
+  background:#0b0b0b;
   font-family: "Trebuchet MS", Tahoma, "MS Sans Serif", Verdana, Arial, sans-serif;
   font-size:14px;
   font-weight:700;
@@ -20,11 +21,16 @@ html, body, [data-testid="stAppViewContainer"]{
   min-height:768px !important;
 }
 
-/* Main content area gets a border like the VXP window */
+/* Main 4:3 frame (keep internal geometry 1024×768; use OUTLINE for bezel so size doesn't shrink) */
 [data-testid="stAppViewContainer"] .block-container{
   background:#c0c0c0;
-  border:2px solid #404040;
-  box-shadow:2px 2px 0px #808080;
+  border:0;
+  outline:18px solid #222;           /* bezel */
+  outline-offset:0;
+  box-shadow:
+    0 0 0 2px #5a5a5a,               /* thin outer trim */
+    0 0 0 4px #0b0b0b,               /* separation from page */
+    6px 6px 0px rgba(0,0,0,0.35);    /* subtle depth */
 }
 
 /* ---- Shell (title/menu/status) ---- */
@@ -94,13 +100,23 @@ html, body, [data-testid="stAppViewContainer"]{
 .vxp-imgbtn img{ width:81px; height:auto; image-rendering: pixelated; }
 .vxp-imgbtn.disabled{ opacity:0.75; pointer-events:none; }
 
-/* ---- Desktop host (MDI area) ---- */
-/* We create a marker (.vxp-desktop-host) inside a VerticalBlock; style that block as the desktop. */
-div[data-testid="stVerticalBlock"]:has(.vxp-desktop-host){
-  position:relative;
-  height:680px;
+/* ---- Desktop area (single window, no overlapping popups) ---- */
+.vxp-desktop{
+  height:680px;                 /* 768 minus title/menu/status & margins */
   background:#c0c0c0;
+  padding:8px;
+  box-sizing:border-box;
+}
+.vxp-winbox{
+  height:100%;
+  background:#c0c0c0;
+  border-top:2px solid #ffffff;
+  border-left:2px solid #ffffff;
+  border-right:2px solid #404040;
+  border-bottom:2px solid #404040;
+  box-shadow:2px 2px 0px #808080;
   overflow:hidden;
+  padding:0;
 }
 
 /* Common window skin applied to positioned element-containers */
@@ -135,51 +151,12 @@ div[data-testid="stVerticalBlock"]:has(.vxp-desktop-host){
   line-height:12px;
 }
 
+/* Reduce default gaps so content feels like a classic dialog */
+.vxp-winbox [data-testid="stVerticalBlock"]{ gap:0.25rem; }
+.vxp-winbox [data-testid="stHorizontalBlock"]{ gap:0.5rem; }
+
+/* Optional pad utility for some screens */
 .vxp-win-pad{ padding:10px 10px 8px 10px; box-sizing:border-box; }
-
-/* ---- Position windows using marker + adjacent sibling (requires :has support) ---- */
-/* Select Procedure window */
-div[data-testid="stVerticalBlock"]:has(.vxp-desktop-host)
-  > div.element-container:has(.vxp-win-marker[data-win="selectproc"]) + div.element-container{
-  position:absolute;
-  left:0px;
-  top:0px;
-  width:760px;
-  height:610px;
-  z-index:10;
-  background:#c0c0c0;
-  border-top:2px solid #ffffff;
-  border-left:2px solid #ffffff;
-  border-right:2px solid #404040;
-  border-bottom:2px solid #404040;
-  box-shadow:2px 2px 0px #808080;
-  padding:0;
-}
-
-/* Active window (procedure screens) */
-div[data-testid="stVerticalBlock"]:has(.vxp-desktop-host)
-  > div.element-container:has(.vxp-win-marker[data-win="active"]) + div.element-container{
-  position:absolute;
-  left:220px;
-  top:95px;
-  width:680px;
-  height:520px;
-  z-index:20;
-  background:#c0c0c0;
-  border-top:2px solid #ffffff;
-  border-left:2px solid #ffffff;
-  border-right:2px solid #404040;
-  border-bottom:2px solid #404040;
-  box-shadow:2px 2px 0px #808080;
-  padding:0;
-}
-
-/* Make inner VerticalBlocks flush inside the window boxes */
-div[data-testid="stVerticalBlock"]:has(.vxp-desktop-host)
-  > div.element-container:has(.vxp-win-marker) + div.element-container
-  > div[data-testid="stVerticalBlock"]{
-  gap:0rem;
-}
 
 /* ---- Widgets (classic 3D) ---- */
 .stButton > button{

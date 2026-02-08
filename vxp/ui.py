@@ -79,26 +79,34 @@ def right_close_button(label: str, on_click: Callable[[], None]) -> None:
         st.button(label, use_container_width=True, on_click=on_click)
 
 
+"""UI rendering.
+
+Nota importante sobre Streamlit:
+  La superposición tipo MDI (varias ventanas apiladas) requiere CSS avanzado
+  que no es consistente entre navegadores. Para evitar que la “ventana nueva”
+  se abra debajo (en vez de superponerse), la UI se renderiza como UNA única
+  ventana principal cuyo contenido cambia según la navegación.
+"""
+
+
 # ---------------------------
-# Desktop (MDI-like)
+# Desktop (single-window)
 # ---------------------------
 
 def render_desktop() -> None:
-    """Draw the MDI desktop with a background 'Select Procedure' window and an optional active window."""
+    """Render a single main window (no overlapping popups)."""
 
-    # Marker used by CSS to style this vertical block as a fixed-height desktop.
-    st.markdown("<div class='vxp-desktop-host'></div>", unsafe_allow_html=True)
+    # Desktop background + one window frame.
+    # The HTML wrappers are intentionally opened/closed here so CSS can draw the
+    # classic 3D borders without relying on :has() selectors.
+    st.markdown("<div class='vxp-desktop'><div class='vxp-winbox'>", unsafe_allow_html=True)
 
-    # Background window: Select Procedure (always visible)
-    st.markdown("<div class='vxp-win-marker' data-win='selectproc'></div>", unsafe_allow_html=True)
-    with st.container():
-        render_select_procedure_window(active=(st.session_state.vxp_screen == "home"))
+    if st.session_state.vxp_screen == "home":
+        render_select_procedure_window(active=True)
+    else:
+        render_active_window()
 
-    # Foreground window: current procedure screen
-    if st.session_state.vxp_screen != "home":
-        st.markdown("<div class='vxp-win-marker' data-win='active'></div>", unsafe_allow_html=True)
-        with st.container():
-            render_active_window()
+    st.markdown("</div></div>", unsafe_allow_html=True)
 
 
 def render_select_procedure_window(active: bool) -> None:
@@ -107,14 +115,32 @@ def render_select_procedure_window(active: bool) -> None:
 
     # Left column holds the classic big buttons; right column stays empty like the original screenshots.
     left, _ = st.columns([0.72, 0.28], gap="small")
+    # IMPORTANT: Avoid on_click callbacks here.
+    # In some Streamlit builds, callbacks can update state after this function
+    # starts rendering, causing the next screen to appear "below" instead of
+    # replacing the current one. We navigate explicitly and force a rerun.
     with left:
-        st.button("Aircraft Info", use_container_width=True, on_click=lambda: go("aircraft_info"))
-        st.button("Main Rotor Balance Run 1", use_container_width=True, on_click=lambda: go("mr_menu"))
-        st.button("Tail Rotor Balance Run 1", use_container_width=True, on_click=lambda: go("not_impl"))
-        st.button("T/R Driveshaft Balance Run 1", use_container_width=True, on_click=lambda: go("not_impl"))
-        st.button("Vibration Signatures", use_container_width=True, on_click=lambda: go("not_impl"))
-        st.button("Measurements Only", use_container_width=True, on_click=lambda: go("not_impl"))
-        st.button("Setup / Utilities", use_container_width=True, on_click=lambda: go("not_impl"))
+        if st.button("Aircraft Info", use_container_width=True, key="home_aircraft_info"):
+            go("aircraft_info")
+            st.rerun()
+        if st.button("Main Rotor Balance Run 1", use_container_width=True, key="home_mr_run1"):
+            go("mr_menu")
+            st.rerun()
+        if st.button("Tail Rotor Balance Run 1", use_container_width=True, key="home_tr_run1"):
+            go("not_impl")
+            st.rerun()
+        if st.button("T/R Driveshaft Balance Run 1", use_container_width=True, key="home_drv_run1"):
+            go("not_impl")
+            st.rerun()
+        if st.button("Vibration Signatures", use_container_width=True, key="home_vib_sig"):
+            go("not_impl")
+            st.rerun()
+        if st.button("Measurements Only", use_container_width=True, key="home_meas_only"):
+            go("not_impl")
+            st.rerun()
+        if st.button("Setup / Utilities", use_container_width=True, key="home_setup_utils"):
+            go("not_impl")
+            st.rerun()
 
 
 def render_active_window() -> None:
