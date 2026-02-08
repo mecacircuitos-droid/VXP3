@@ -12,7 +12,7 @@ from .sim import (
     simulate_measurement,
 )
 from .reports import legacy_results_text
-from .plots import plot_track_marker, plot_polar
+from .plots import plot_track_marker, plot_track_graph, plot_polar, plot_polar_compare
 from .solver import all_ok
 
 
@@ -310,18 +310,30 @@ def screen_meas_graph_window():
         return
 
     available = [r for r in REGIMES if r in data]
-    sel = st.selectbox("Select Measurement", available, format_func=lambda rr: REGIME_LABEL[rr])
+
+    # Keep controls compact (closer to the original dialog)
+    ctrl = st.columns([0.22, 0.78], gap="small")
+    with ctrl[0]:
+        view_run = run_selector_inline()
+    with ctrl[1]:
+        sel = st.selectbox("Select Measurement", available, format_func=lambda rr: REGIME_LABEL[rr], key="meas_sel")
+
     m = data[sel]
 
-    left, right = st.columns([0.55, 0.45], gap="medium")
+    # Data for comparison graphs (up to the 3 regimes)
+    compare = {r: data[r] for r in REGIMES if r in data}
+
+    left, right = st.columns([0.56, 0.44], gap="medium")
     with left:
         st.markdown(
-            f"<div class='vxp-mono' style='height:360px; overflow:auto;'>{legacy_results_text(view_run, data)}</div>",
+            f"<div class='vxp-mono' style='height:330px; overflow:auto;'>{legacy_results_text(view_run, data)}</div>",
             unsafe_allow_html=True,
         )
     with right:
+        # Smaller charts + add comparison plots like the original
         st.pyplot(plot_track_marker(m), clear_figure=True)
-        st.pyplot(plot_polar(m), clear_figure=True)
+        st.pyplot(plot_track_graph(compare), clear_figure=True)
+        st.pyplot(plot_polar_compare(compare), clear_figure=True)
 
     right_close_button("Close", on_click=lambda: go("mr_menu"))
 
