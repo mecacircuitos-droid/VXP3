@@ -96,17 +96,25 @@ Nota importante sobre Streamlit:
 def render_desktop() -> None:
     """Render a single main window (no overlapping popups)."""
 
-    # Desktop background + one window frame.
-    # The HTML wrappers are intentionally opened/closed here so CSS can draw the
-    # classic 3D borders without relying on :has() selectors.
-    st.markdown("<div class='vxp-desktop'><div class='vxp-winbox'>", unsafe_allow_html=True)
+    # IMPORTANT (Streamlit): we cannot "wrap" widgets inside an open <div>
+    # created by st.markdown. Doing so produces empty boxes and pushes the
+    # widgets below the intended frame (exactly what you saw).
+    #
+    # We instead use a real Streamlit container (optionally with border=True)
+    # and skin that container via CSS.
+    try:
+        desk = st.container(border=True)
+    except TypeError:
+        desk = st.container()
 
-    if st.session_state.vxp_screen == "home":
-        render_select_procedure_window(active=True)
-    else:
-        render_active_window()
+    with desk:
+        # Marker used by CSS (safe even if :has is not available).
+        st.markdown("<div class='vxp-desktop-marker'></div>", unsafe_allow_html=True)
 
-    st.markdown("</div></div>", unsafe_allow_html=True)
+        if st.session_state.vxp_screen == "home":
+            render_select_procedure_window(active=True)
+        else:
+            render_active_window()
 
 
 def render_select_procedure_window(active: bool) -> None:

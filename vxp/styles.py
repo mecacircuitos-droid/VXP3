@@ -101,22 +101,40 @@ html, body, [data-testid="stAppViewContainer"]{
 .vxp-imgbtn.disabled{ opacity:0.75; pointer-events:none; }
 
 /* ---- Desktop area (single window, no overlapping popups) ---- */
-.vxp-desktop{
-  height:680px;                 /* 768 minus title/menu/status & margins */
-  background:#c0c0c0;
-  padding:8px;
-  box-sizing:border-box;
+/* We skin the Streamlit container created in ui.render_desktop(). */
+.vxp-desktop-marker{ display:none; }
+
+@supports selector(:has(*)) {
+  div[data-testid="stVerticalBlockBorderWrapper"]:has(.vxp-desktop-marker){
+    height:680px !important;         /* 768 - (26+22+22) - small margins */
+    background:#c0c0c0 !important;
+    border:0 !important;
+    border-top:2px solid #ffffff !important;
+    border-left:2px solid #ffffff !important;
+    border-right:2px solid #404040 !important;
+    border-bottom:2px solid #404040 !important;
+    box-shadow:2px 2px 0px #808080 !important;
+    overflow:auto !important;
+    padding:8px !important;
+    box-sizing:border-box !important;
+  }
 }
-.vxp-winbox{
-  height:100%;
-  background:#c0c0c0;
-  border-top:2px solid #ffffff;
-  border-left:2px solid #ffffff;
-  border-right:2px solid #404040;
-  border-bottom:2px solid #404040;
-  box-shadow:2px 2px 0px #808080;
-  overflow:hidden;
-  padding:0;
+
+@supports not selector(:has(*)) {
+  /* Fallback: if :has() is not available, we assume there's only one bordered container. */
+  div[data-testid="stVerticalBlockBorderWrapper"]{
+    height:680px !important;
+    background:#c0c0c0 !important;
+    border:0 !important;
+    border-top:2px solid #ffffff !important;
+    border-left:2px solid #ffffff !important;
+    border-right:2px solid #404040 !important;
+    border-bottom:2px solid #404040 !important;
+    box-shadow:2px 2px 0px #808080 !important;
+    overflow:auto !important;
+    padding:8px !important;
+    box-sizing:border-box !important;
+  }
 }
 
 /* Common window skin applied to positioned element-containers */
@@ -152,8 +170,8 @@ html, body, [data-testid="stAppViewContainer"]{
 }
 
 /* Reduce default gaps so content feels like a classic dialog */
-.vxp-winbox [data-testid="stVerticalBlock"]{ gap:0.25rem; }
-.vxp-winbox [data-testid="stHorizontalBlock"]{ gap:0.5rem; }
+div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"]{ gap:0.25rem; }
+div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"]{ gap:0.5rem; }
 
 /* Optional pad utility for some screens */
 .vxp-win-pad{ padding:10px 10px 8px 10px; box-sizing:border-box; }
