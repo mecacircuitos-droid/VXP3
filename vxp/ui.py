@@ -73,10 +73,32 @@ def win_caption(title: str, active: bool) -> None:
     )
 
 
-def right_close_button(label: str, on_click: Callable[[], None]) -> None:
+def right_close_button(
+    label: str,
+    *,
+    target: str | None = None,
+    on_click: Callable[[], None] | None = None,
+    key: str | None = None,
+) -> None:
+    """Classic right-aligned button (usually Close).
+
+    Streamlit can raise StreamlitDuplicateElementKey when multiple elements
+    end up with the same implicit key. To make the app robust across Streamlit
+    versions and navigation patterns, we always provide an explicit key.
+    """
+    screen = str(st.session_state.get("vxp_screen", ""))
+    if key is None:
+        safe = "".join(ch if ch.isalnum() else "_" for ch in label.lower())
+        key = f"btn_{screen}_{safe}_right"
+
     cols = st.columns([0.75, 0.25])
     with cols[1]:
-        st.button(label, use_container_width=True, on_click=on_click)
+        if st.button(label, use_container_width=True, key=key):
+            if target is not None:
+                go(target)
+            if on_click is not None:
+                on_click()
+            st.rerun()
 
 
 """UI rendering.
@@ -186,7 +208,13 @@ def _centered_buttons(labels_and_targets):
     left, mid, right = st.columns([0.10, 0.80, 0.10])
     with mid:
         for label, target in labels_and_targets:
-            st.button(label, use_container_width=True, on_click=lambda t=target: go(t))
+            # Explicit key avoids StreamlitDuplicateElementKey on some builds.
+            screen = str(st.session_state.get("vxp_screen", ""))
+            safe_t = "".join(ch if ch.isalnum() else "_" for ch in str(target))
+            k = f"btn_{screen}_{safe_t}"
+            if st.button(label, use_container_width=True, key=k):
+                go(target)
+                st.rerun()
 
 
 def screen_mr_menu_window():
@@ -316,11 +344,13 @@ def screen_meas_graph_window():
 
     available = [r for r in REGIMES if r in data]
     with ctrl[1]:
+        # Include run in the key to avoid any chance of collisions when switching
+        # runs quickly (some Streamlit builds can be picky about implicit keys).
         sel = st.selectbox(
             "Select Measurement",
             available,
             format_func=lambda rr: REGIME_LABEL[rr],
-            key="meas_sel",
+            key=f"meas_sel_run_{view_run}",
         )
 
     m = data[sel]
@@ -347,7 +377,12 @@ def screen_settings_window():
     win_caption("SETTINGS", active=True)
     run_selector_inline(key="run_selector_settings")
 
-    regime = st.selectbox("Regime", options=REGIMES, format_func=lambda r: REGIME_LABEL[r])
+    regime = st.selectbox(
+        "Regime",
+        options=REGIMES,
+        format_func=lambda r: REGIME_LABEL[r],
+        key="settings_regime",
+    )
     adj = st.session_state.vxp_adjustments[regime]
 
     hdr = st.columns([0.20, 0.27, 0.27, 0.26])
@@ -414,14 +449,21 @@ def screen_next_run_window():
     cols = st.columns([0.5, 0.5])
 
     with cols[0]:
-        if st.button("Start Next Run", use_container_width=True, disabled=(run >= 3)):
+        if st.button(
+            "Start Next Run",
+            use_container_width=True,
+            disabled=(run >= 3),
+            key=f"next_run_start_{run}",
+        ):
             st.session_state.vxp_run = run + 1
             st.session_state.vxp_runs.setdefault(run + 1, {})
             st.session_state.vxp_completed_by_run.setdefault(run + 1, set())
             go("mr_menu")
             st.rerun()
     with cols[1]:
-        st.button("Cancel", use_container_width=True, on_click=lambda: go("mr_menu"))
+        if st.button("Cancel", use_container_width=True, key=f"next_run_cancel_{run}"):
+            go("mr_menu")
+            st.rerun()
 
 
 def screen_aircraft_info_window():
