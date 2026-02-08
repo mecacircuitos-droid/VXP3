@@ -46,14 +46,14 @@ def completed_set(run: int):
     return st.session_state.vxp_completed_by_run.setdefault(run, set())
 
 
-def run_selector_inline() -> int:
+def run_selector_inline(key: str = "run_selector") -> int:
     runs = sorted(st.session_state.vxp_runs.keys())
     cur = int(st.session_state.vxp_view_run)
     if cur not in runs:
         cur = runs[0]
         st.session_state.vxp_view_run = cur
     idx = runs.index(cur)
-    r = st.selectbox("Run", runs, index=idx, key="run_selector")
+    r = st.selectbox("Run", runs, index=idx, key=key)
     st.session_state.vxp_view_run = int(r)
     return int(r)
 
@@ -287,7 +287,7 @@ def screen_acquire_window():
 
 def screen_meas_list_window():
     win_caption("MEASUREMENTS LIST", active=True)
-    view_run = run_selector_inline()
+    view_run = run_selector_inline(key="run_selector_generic")
     data = current_run_data(view_run)
     if not data:
         st.write("No measurements for this run yet. Go to COLLECT.")
@@ -302,7 +302,12 @@ def screen_meas_list_window():
 
 def screen_meas_graph_window():
     win_caption("MEASUREMENTS GRAPH", active=True)
-    view_run = run_selector_inline()
+
+    # Compact controls row (like the original)
+    ctrl = st.columns([0.22, 0.78], gap="small")
+    with ctrl[0]:
+        view_run = run_selector_inline(key="run_selector_meas_graph")
+
     data = current_run_data(view_run)
     if not data:
         st.write("No measurements for this run yet. Go to COLLECT.")
@@ -310,13 +315,13 @@ def screen_meas_graph_window():
         return
 
     available = [r for r in REGIMES if r in data]
-
-    # Keep controls compact (closer to the original dialog)
-    ctrl = st.columns([0.22, 0.78], gap="small")
-    with ctrl[0]:
-        view_run = run_selector_inline()
     with ctrl[1]:
-        sel = st.selectbox("Select Measurement", available, format_func=lambda rr: REGIME_LABEL[rr], key="meas_sel")
+        sel = st.selectbox(
+            "Select Measurement",
+            available,
+            format_func=lambda rr: REGIME_LABEL[rr],
+            key="meas_sel",
+        )
 
     m = data[sel]
 
@@ -330,7 +335,7 @@ def screen_meas_graph_window():
             unsafe_allow_html=True,
         )
     with right:
-        # Smaller charts + add comparison plots like the original
+        # Smaller charts + comparison plots (track marker, track over regimes, polar compare)
         st.pyplot(plot_track_marker(m), clear_figure=True)
         st.pyplot(plot_track_graph(compare), clear_figure=True)
         st.pyplot(plot_polar_compare(compare), clear_figure=True)
@@ -340,7 +345,7 @@ def screen_meas_graph_window():
 
 def screen_settings_window():
     win_caption("SETTINGS", active=True)
-    run_selector_inline()
+    run_selector_inline(key="run_selector_settings")
 
     regime = st.selectbox("Regime", options=REGIMES, format_func=lambda r: REGIME_LABEL[r])
     adj = st.session_state.vxp_adjustments[regime]
@@ -369,7 +374,7 @@ def screen_settings_window():
 
 def screen_solution_window():
     win_caption("SOLUTION", active=True)
-    view_run = run_selector_inline()
+    view_run = run_selector_inline(key="run_selector_solution")
     data = current_run_data(view_run)
     if not data:
         st.write("No measurements for this run yet. Go to COLLECT.")
@@ -387,7 +392,7 @@ def screen_solution_window():
 
 def screen_solution_text_window():
     win_caption("SOLUTION", active=True)
-    view_run = run_selector_inline()
+    view_run = run_selector_inline(key="run_selector_solution_text")
     data = current_run_data(view_run)
     if not data:
         st.write("No measurements for this run yet. Go to COLLECT.")
