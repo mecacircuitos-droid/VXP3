@@ -4,6 +4,7 @@ from vxp.styles import XP_CSS
 from vxp.toolbar import render_toolbar
 from vxp.ui import init_state, render_desktop
 
+
 def main():
     # La máquina objetivo es XGA 1024×768 (4:3). El CSS fuerza el marco a esa geometría.
     st.set_page_config(page_title="Chadwick-Helmuth VXP", layout="wide")
@@ -23,6 +24,7 @@ def main():
         "</div>",
         unsafe_allow_html=True,
     )
+
     # Menú: SOLO visual (sin links, sin pestañas nuevas)
     st.markdown(
         "<div class='vxp-shell-menubar'>"
@@ -31,18 +33,19 @@ def main():
         unsafe_allow_html=True,
     )
 
-    # --- Cuerpo: icon bar + escritorio (MDI) ---
+    # --- Cuerpo: icon bar + escritorio ---
     left, right = st.columns([0.10, 0.90], gap="small")
     with left:
         render_toolbar(interactive=False)  # 100% visual
     with right:
         render_desktop()
 
-    # Barra de estado (simple)
+    # Barra de estado (siempre abajo con CSS)
     st.markdown(
         "<div class='vxp-shell-statusbar'><div>READY</div><div>XGA 1024×768</div></div>",
         unsafe_allow_html=True,
     )
+
 
 if __name__ == "__main__":
     main()
