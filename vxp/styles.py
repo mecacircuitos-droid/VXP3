@@ -25,6 +25,9 @@ XP_CSS = (
 [data-testid="stHeader"], [data-testid="stToolbar"], #MainMenu { display:none !important; }
 footer { visibility:hidden; }
 
+/* ---- Reset margins so the blue bar is flush at the very top ---- */
+html, body { margin:0 !important; padding:0 !important; }
+
 /* ---- Global look (Windows XP-ish) ---- */
 /* The page background simulates a ruggedized tablet around the 1024×768 screen. */
 html, body, [data-testid="stAppViewContainer"]{
@@ -52,6 +55,14 @@ html, body, [data-testid="stAppViewContainer"]{
   position:relative !important;
 }
 
+/* IMPORTANT: make the Streamlit main vertical block a flex column so the status bar can stick to bottom */
+.block-container > div[data-testid="stVerticalBlock"]{
+  height:100% !important;
+  min-height:100% !important;
+  display:flex !important;
+  flex-direction:column !important;
+}
+
 /* Main 4:3 frame */
 [data-testid="stAppViewContainer"] .block-container{
   background:#c0c0c0;
@@ -75,6 +86,7 @@ html, body, [data-testid="stAppViewContainer"]{
   box-sizing:border-box;
   font-weight:900;
   letter-spacing:0.2px;
+  flex:0 0 26px;
 }
 
 .vxp-winbtns{ display:flex; gap:4px; }
@@ -107,9 +119,11 @@ html, body, [data-testid="stAppViewContainer"]{
   font-weight:700;
   font-size:13px;
   color:#000;
+  flex:0 0 22px;
 }
 .vxp-shell-menubar span{ padding:2px 4px; }
 
+/* STATUS BAR: no absolute positioning; push to bottom using flex */
 .vxp-shell-statusbar{
   height:22px;
   background:#d4d0c8;
@@ -122,13 +136,13 @@ html, body, [data-testid="stAppViewContainer"]{
   box-sizing:border-box;
   font-size:12px;
   font-weight:700;
-  position:absolute;
-  left:0;
-  right:0;
-  bottom:0;
+
+  position:static !important;
+  margin-top:auto !important;   /* <-- pushes it to the bottom */
+  flex:0 0 22px;
 }
 
-/* Reduce Streamlit element margins so the status bar sits tight at the bottom */
+/* Reduce Streamlit element margins so layout packs tight */
 div[data-testid="stAppViewContainer"] .block-container div.element-container{ margin-bottom:0 !important; }
 
 /* ---- Left smart icon bar ---- */
@@ -157,7 +171,7 @@ div[data-testid="stAppViewContainer"] .block-container div.element-container{ ma
 }
 
 @supports not selector(:has(*)) {
-  /* Fallback: if :has() is not available, we assume there's only one bordered container. */
+  /* Fallback */
   div[data-testid="stVerticalBlockBorderWrapper"]{
     height:698px !important;
     background:#c0c0c0 !important;
